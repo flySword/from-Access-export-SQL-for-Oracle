@@ -1,5 +1,11 @@
 Attribute VB_Name = "模块1"
 Option Compare Database
+
+' microsoft scripting running
+' microsoft ActiveX data objects 2.8 library
+' microsoft ADO Ext. 6.0 for DLL and security
+
+
 Function CreateSQLString(ByVal FilePath As String) As Boolean
 '本函数根据当前MDB中的表创建一个 *.jetsql 脚本
 '这个函数不是最完美的解决方案，因为 JET SQL DDL 语句不支持一些 ACCESS 特有的属性（DAO支持）
@@ -48,10 +54,7 @@ On Error GoTo CreateSQLScript_Err
             If MyTable.Name = "GEOSPATIALCHARTLABEL" Then
                 isErr = 0
             End If
-                
-            
-            
-            
+    
             
             Set dct = CreateObject("Scripting.Dictionary")
             Set cn = CurrentProject.Connection
@@ -274,81 +277,6 @@ Function SQLKey(ByVal objTable As ADOX.Table)
 End Function
 
 
-Function SQLField(ByVal objField As Fields)
-'调用 ADOX 生成有关“字段”的 JET SQL DDL 子句
-'Reference ADOX and create the JET SQL DDL clause about the "Field"
-    Dim p As String
-    Select Case objField.Type
-        Case 11
-            p = " NUMERIC(1)"    'yesno 改为 NUMERIC(1)
-        Case 6
-            p = " money"
-        Case 7
-            p = " DATE"     'datetime 改为 DATE
-        Case 5
-            p = " FLOAT"    'or " Double"
-        Case 72
-            'JET SQL DDL 语句无法创建“自动编号 GUID”字段，这里暂时用
-            '[d] GUID default GenGUID() 代替部分功能，详情请看文章
-            '如何用JET SQL DDL创建自动编号GUID字段
-            'http://access911.net/?kbid;72FABE1E17DCEEF3
-            If objField.Properties("Autoincrement") = True Then
-                p = " autoincrement GUID"
-            Else
-                p = " GUID"
-            End If
-        Case 3
-            If objField.Properties("Autoincrement") = False Then
-                p = " smallint"
-            Else
-                p = " AUTOINCREMENT(1," & objField.Properties("Increment") & ")"
-            End If
-        Case 205
-            p = " BLOB"  'image to BLOB for oracle
-        Case 203
-            p = " varchar(1024)"   'memo to varchar for oracle  'Access "HyperLink" field is also a MEMO data type.
-            'ACCESS 的超级链接也是 MEMO 类型的
-        Case 131
-            p = " NUMERIC"   'decimal to NUMERIC for oracle
-            p = p & "(" & objField.Precision & "," & objField.NumericScale & ")"
-        Case 4
-            p = " NUMERIC(10,3)"  'single to NUMERIC(10,3) for oracle     'or " REAL"
-        Case 2
-            p = " smallint"
-        Case 17
-            p = " varchar(6)"    ' byte 改为 varchar(6) for oracle
-        Case 202
-            p = " varchar"   ' nvarchar to varchar for oracle
-            p = p & "(" & objField.DefinedSize & ")"
-        Case 130
-            '指示一个以 Null 终止的 Unicode 字符串 (DBTYPE_WSTR)。 这种数据类型用 ACCESS 设计器是无法设计出来的。
-            '20100826 新增
-            p = " char"
-            p = p & "(" & objField.DefinedSize & ")"
-        Case Else
-            p = " (" & objField.Type & " Unknown,You can find it in ADOX's help. Please Check it.)"
-    End Select
-    p = " " & objField.Name & " " & p
-    If IsEmpty(objField.Properties("Default")) = False Then
-        p = p & " default " & objField.Properties("Default")
-    End If
-    If objField.Properties("Nullable") = False Then
-        p = p & " not null"
-    End If
-    SQLField = p
-End Function
-
-
-
-Public Function GetfilType(Tbname As String, Filname As String) As String
-'功能:获得字段类型
-Dim rs As New ADODB.Recordset
-rs.Open Tbname, CurrentProject.Connection, adOpenKeyset, adLockOptimistic
-GetfilType = rs(Filname).Type
-End Function
-
-
-
 
 
 Sub RunTest_CreateScript()
@@ -357,92 +285,3 @@ Sub RunTest_CreateScript()
 End Sub
 
 
-
-
-
-Sub test()
-    Dim GetfilType As String
-    
-    Dim rs As New ADODB.Recordset
-    Dim rs1 As New ADODB.Recordset
-    Dim cn As ADODB.Connection
-    Dim FN As ADODB.Field
-    
-    Set cn = CurrentProject.Connection
-    
-    Dim i As Long
-    Set rs = cn.OpenSchema(20)
-    ' rs.Open "DB03MineSvy_01TC_BaseInfo", CurrentProject.Connection, adOpenKeyset, adLockOptimistic
-    
-    rs.MoveNext
-    If UCase(rs("TABLE_TYPE")) = "TABLE" Then
-        MsgBox "表:" & rs("TABLE_NAME")
-    End If
-    
-    rs1.Open "DB03MineSvy_01TC_BaseInfo", cn
-    For Each FN In rs.Fields
-        MsgBox FN.Name
-    Next
-    
-    
-    
-  
-    'MsgBox GetfilType
-
-
-End Sub
-
-
-
-
-Sub test2()
-    Dim adSchemaColumns As Integer
-    adSchemaColumns = 4
-    Dim cn, rs, dct, i
-    
-    Set dct = CreateObject("Scripting.Dictionary")
-    Set cn = CurrentProject.Connection
-    Set rs = cn.OpenSchema(4, Array(Null, Null, "DB03MineSvy_01TC_BaseInfo"))
-    
-
-    Dim aa As Integer
-    
-
-    
-    
-    MsgBox rs.Fields(11).Name
-    MsgBox rs.Fields(2).Value
-    
-    
-    aa = 0
-    With rs
-        Do While Not .EOF
-            dct.Add .Fields("ORDINAL_POSITION").Value, .Fields("COLUMN_NAME").Value & .Fields("DATA_TYPE").Value
-            
-            'MsgBox .Fields("DATA_TYPE").Value
-            
-            
-            .MoveNext
-            
-              
-        Loop
-        .Close
-    End With
-    
-    
-    
-    
-
-    
-
-    
-    For i = 1 To dct.Count
-        
-       MsgBox dct(i)
-    Next
-    
-    Set dct = Nothing
-    Set rs = Nothing
-    cn.Close
-    Set cn = Nothing
-End Sub
