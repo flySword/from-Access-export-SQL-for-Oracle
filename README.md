@@ -1,3 +1,5 @@
+refer to http://access911.net/fixhtm/72fab11e16dcebf3.htm?tt=
+
 # from-Access-export-create-table-SQL-for-Oracle
 
 
